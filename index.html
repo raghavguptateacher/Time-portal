@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1f3a" />
+  <title>Time Portal | UAE Math Odyssey</title>
+  <style>
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      --base: #34211f;
+      --accent: #ffd2a5;
+      --glow: rgba(193, 102, 47, .48);
+      margin: 0;
+      min-height: 100vh;
+      color: #f7f7f4;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, var(--glow), transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(13, 115, 119, .22), transparent 42%),
+        var(--base);
+    }
+    body[data-era="present"] {
+      --base: #12343a;
+      --accent: #a5f0df;
+      --glow: rgba(13, 115, 119, .52);
+    }
+    body[data-era="future"] {
+      --base: #0b1f3a;
+      --accent: #add8ff;
+      --glow: rgba(49, 109, 190, .44);
+    }
+
+    .app { max-width: 1050px; margin: auto; padding: 24px 22px 36px; }
+    .brand {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; flex-wrap: wrap;
+      font-size: .76rem; font-weight: 800; letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .brand .grade {
+      padding: 8px 12px; border: 1px solid #ffffff55;
+      border-radius: 999px; letter-spacing: .08em;
+    }
+    .intro { margin: 44px 0 28px; }
+    .intro .eyebrow {
+      color: var(--accent); font-weight: 800; letter-spacing: .16em;
+      text-transform: uppercase; font-size: .8rem;
+    }
+    .intro h2 {
+      margin: 8px 0; max-width: 760px;
+      font-size: clamp(2.25rem, 6vw, 4.5rem);
+      line-height: 1.05; letter-spacing: -.055em;
+    }
+    .intro h2 em { color: var(--accent); font-style: normal; }
+    .intro p { margin: 12px 0 0; color: #dbe4e9; }
+    .arabic { font-size: .95rem; }
+
+    .stations {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; list-style: none; padding: 0; margin: 26px 0 12px;
+    }
+    .stations li {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px; border-radius: 12px;
+      border: 1px solid #ffffff35; color: #d9e3e9;
+      background: #ffffff09; font-size: .88rem;
+    }
+    .stations .number { font-weight: 900; color: var(--accent); }
+    .stations li.is-active {
+      border-color: var(--accent); background: #ffffff17;
+      color: white;
+    }
+    .stations li.is-done .number::after { content: " ✓"; }
+
+    .progress-label {
+      display: flex; justify-content: space-between; gap: 10px;
+      margin: 0 2px 8px; font-size: .8rem; color: #e2e9ed;
+    }
+    .meter {
+      height: 8px; border-radius: 99px; overflow: hidden;
+      background: #ffffff2b;
+    }
+    .meter-fill {
+      width: 0; height: 100%; border-radius: inherit;
+      background: var(--accent);
+      transition: width .45s ease;
+    }
+
+    .layout {
+      display: grid; grid-template-columns: .85fr 1.15fr;
+      gap: 18px; margin-top: 24px;
+    }
+    .art-panel, .card {
+      border: 1px solid #ffffff35; border-radius: 24px;
+      background: #09152bb0;
+      box-shadow: 0 20px 60px #00000025;
+    }
+    .art-panel {
+      min-height: 455px; padding: 26px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background-image:
+        radial-gradient(#ffffff18 1px, transparent 1px),
+        linear-gradient(145deg, #ffffff17, #08132bc4);
+      background-size: 24px 24px, auto;
+      overflow: hidden;
+    }
+    .portal {
+      position: relative; display: grid; place-items: center;
+      width: 260px; height: 260px; border-radius: 50%;
+      background: radial-gradient(circle, #ffffff1f, #ffffff08 58%, transparent 59%);
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 36px var(--glow), inset 0 0 35px var(--glow);
+    }
+    .portal::before, .portal::after {
+      content: ""; position: absolute; border-radius: 50%;
+      pointer-events: none;
+    }
+    .portal::before {
+      inset: -15px; border: 2px dashed #ffffff70;
+      animation: orbit 30s linear infinite;
+    }
+    .portal::after { inset: 20px; border: 1px solid #ffffff55; }
+    .portal.unlocked { box-shadow: 0 0 70px var(--accent), inset 0 0 45px var(--glow); }
+    .portal svg { width: 116px; height: 116px; color: var(--accent); z-index: 1; }
+    .art-caption {
+      margin: 38px 0 0; color: #e1e9ee;
+      text-align: center; font-size: .9rem;
+    }
+    @keyframes orbit { to { transform: rotate(360deg); } }
+
+    .card { padding: clamp(24px, 4vw, 42px); }
+    .card-top {
+      display: flex; justify-content: space-between; gap: 12px;
+      color: var(--accent); font-size: .72rem;
+      font-weight: 800; letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 24px 0 10px; font-size: clamp(1.9rem, 4vw, 2.7rem);
+      line-height: 1.12; letter-spacing: -.04em;
+    }
+    .story { color: #d7e1e8; line-height: 1.55; }
+    .question {
+      margin: 22px 0; padding: 18px 20px;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 12px 12px 0;
+      background: #ffffff12; line-height: 1.55;
+      font-size: 1.1rem; font-weight: 650;
+    }
+    label {
+      display: block; margin-bottom: 10px;
+      font-size: .85rem; font-weight: 800;
+    }
+    label small {
+      display: block; margin-top: 4px;
+      color: #d3dee5; font-size: .78rem; font-weight: 400;
+    }
+    .input-wrap { position: relative; }
+    input {
+      width: 100%; padding: 15px 85px 15px 16px;
+      border: 1px solid #ffffff75; border-radius: 12px;
+      background: #071325; color: white;
+      font: inherit; font-size: 1.25rem;
+    }
+    .unit {
+      position: absolute; right: 17px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent); font-weight: 800;
+    }
+    button {
+      width: 100%; margin-top: 14px; padding: 15px 18px;
+      border: 0; border-radius: 12px;
+      color: #102031; background: var(--accent);
+      font: inherit; font-weight: 850; cursor: pointer;
+      transition: transform .2s ease, filter .2s ease;
+    }
+    button:hover { transform: translateY(-2px); filter: brightness(1.07); }
+    button.secondary {
+      color: white; background: transparent;
+      border: 1px solid #ffffff90;
+    }
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid var(--accent); outline-offset: 3px;
+    }
+    .feedback { min-height: 24px; margin: 16px 0 0; line-height: 1.5; }
+    .feedback.good { color: #b9f3d2; }
+    .feedback.try { color: #ffdab0; }
+    footer { margin-top: 24px; color: #d2dce4; font-size: .8rem; }
+
+    @media (max-width: 720px) {
+      .intro { margin-top: 32px; }
+      .layout { grid-template-columns: 1fr; }
+      .art-panel { min-height: 215px; padding: 20px; }
+      .portal { width: 145px; height: 145px; }
+      .portal svg { width: 72px; height: 72px; }
+      .art-caption { margin-top: 20px; }
+      .stations li { gap: 5px; padding: 10px 7px; font-size: .73rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body data-era="heritage">
+  <div class="app">
+    <header class="brand">
+      <span>✦ Rishabh Gupta's Math Odyssey</span>
+      <span class="grade">UAE · Grades 6–7</span>
+    </header>
+
+    <div class="intro">
+      <div class="eyebrow">An interactive journey through time</div>
+      <h2>Unlock the <em>Time Portal.</em></h2>
+      <p>Solve five math locks: heritage → present day → an imagined future.</p>
+      <p class="arabic" lang="ar" dir="rtl">من تراث الإمارات إلى مستقبلها</p>
+    </div>
+
+    <ol class="stations" aria-label="Journey stages">
+      <li><span class="number">01</span><span>Heritage UAE</span></li>
+      <li><span class="number">02</span><span>Present Day</span></li>
+      <li><span class="number">03</span><span>Future UAE</span></li>
+    </ol>
+
+    <div class="progress-label">
+      <span>PORTAL ENERGY</span>
+      <span id="progressText">0 / 5 locks open</span>
+    </div>
+    <div class="meter" role="progressbar" aria-label="Main locks completed"
+         aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+      <div class="meter-fill" id="meterFill"></div>
+    </div>
+
+    <div class="layout">
+      <aside class="art-panel">
+        <div class="portal" id="portal" aria-hidden="true">
+          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor"
+               stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <defs>
+              <symbol id="art-heritage" viewBox="0 0 120 120">
+                <path d="M60 10 74 37 103 31 88 59 108 82 78 82 60 109 42 82 12 82 32 59 17 31 46 37Z"/>
+                <circle cx="60" cy="60" r="20"/>
+                <circle cx="60" cy="60" r="6"/>
+              </symbol>
+              <symbol id="art-present" viewBox="0 0 120 120">
+                <path d="M27 42h66l-5 64H32Z"/>
+                <path d="M43 46V33a17 17 0 0 1 34 0v13"/>
+                <circle cx="47" cy="65" r="6"/>
+                <circle cx="73" cy="84" r="6"/>
+                <path d="M44 91 76 58"/>
+              </symbol>
+              <symbol id="art-future" viewBox="0 0 120 120">
+                <path d="M60 12C82 27 88 55 70 85H50C32 55 38 27 60 12Z"/>
+                <circle cx="60" cy="48" r="9"/>
+                <path d="M45 68 31 84v14l19-13M75 68l14 16v14L70 85"/>
+                <path d="M53 86v16m7-16v23m7-23v16"/>
+              </symbol>
+            </defs>
+            <use id="artUse" href="#art-heritage"></use>
+          </svg>
+        </div>
+        <p class="art-caption" id="artCaption">Patterns, pearls, and desert navigation</p>
+      </aside>
+
+      <main class="card">
+        <div class="card-top">
+          <span id="eraTag">Heritage UAE</span>
+          <span id="lockTag">Lock 1 of 5</span>
+        </div>
+
+        <h1 id="title" tabindex="-1"></h1>
+        <p class="story" id="story"></p>
+        <div class="question" id="question"></div>
+
+        <form id="answerForm">
+          <label for="answer">
+            Your answer
+            <small>Enter numbers only. Use a dot for decimals; no commas.</small>
+          </label>
+          <div class="input-wrap">
+            <input id="answer" type="text" inputmode="decimal"
+                   autocomplete="off" spellcheck="false"
+                   aria-describedby="question unit feedback" />
+            <span class="unit" id="unit"></span>
+          </div>
+          <button type="submit">Unlock this lock →</button>
+        </form>
+
+        <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+
+        <div id="nextArea" hidden>
+          <button type="button" id="nextBtn">Continue →</button>
+        </div>
+        <div id="choiceArea" hidden>
+          <button type="button" id="bonusBtn">Try two Grade 7 bonus locks →</button>
+          <button type="button" class="secondary" id="skipBtn">Finish my quest</button>
+        </div>
+        <div id="finishArea" hidden>
+          <button type="button" id="restartBtn">Travel through time again ↺</button>
+        </div>
+      </main>
+    </div>
+
+    <footer>
+      No names are requested. Answers are checked in this browser and are not
+      submitted by the game.
+    </footer>
+  </div>
+
+  <script>
+    const quests = [
+      {
+        era: "heritage", eraLabel: "Heritage UAE",
+        scene: "Patterns, pearls, and desert navigation",
+        title: "The Pearl-Diving Record",
+        story: "A fictional record inspired by UAE pearl-diving heritage.",
+        question: "A diver opens 400 oysters. Six contain pearls. What percentage of the oysters contain pearls?",
+        unit: "%", answer: 1.5,
+        hint: "Divide 6 by 400, then multiply by 100.",
+        success: "Pearl route unlocked! (6 ÷ 400) × 100 = 1.5%."
+      },
+      {
+        era: "heritage", eraLabel: "Heritage UAE",
+        scene: "Read the angles of the desert sky",
+        title: "The Desert Sky",
+        story: "A navigator draws a star's position above the horizon.",
+        question: "The star is 35° above the horizon. Vertical is 90° above the horizon. What is the angle between the star and vertical?",
+        unit: "°", answer: 55,
+        hint: "Subtract 35° from 90°.",
+        success: "Sky route unlocked! 90° − 35° = 55°."
+      },
+      {
+        era: "present", eraLabel: "Present-Day UAE",
+        scene: "Percentages in everyday life",
+        title: "The Shopping Challenge",
+        story: "In this example, the item is subject to 5% VAT.",
+        question: "A bag costs AED 240. It is discounted by 25%. Then 5% VAT is added to the discounted price. What is the final price?",
+        unit: "AED", answer: 189,
+        hint: "First find 75% of AED 240. Then add 5% of that new price.",
+        success: "Shopping route unlocked! AED 240 × 0.75 = AED 180; AED 180 × 1.05 = AED 189."
+      },
+      {
+        era: "future", eraLabel: "Future UAE",
+        scene: "Blueprints for an imagined smart city",
+        title: "The Smart-City Blueprint",
+        story: "An architect is planning a tower for an imagined future city.",
+        question: "On the drawing, 1 cm represents 25 m. The tower is 6 cm tall on the drawing. How tall is the real tower?",
+        unit: "m", answer: 150,
+        hint: "Each of the six centimetres represents 25 metres.",
+        success: "Blueprint unlocked! 6 × 25 = 150 m."
+      },
+      {
+        era: "future", eraLabel: "Future UAE",
+        scene: "Mathematics reaches beyond Earth",
+        title: "The Space Research Craft",
+        story: "Inspired by the UAE's Hope Probe, imagine a different, fictional future spacecraft. The real Hope Probe reached Mars orbit in 2021.",
+        question: "The fictional craft travels 9,600 km in 3 hours. What is its average speed?",
+        unit: "km/h", answer: 3200,
+        hint: "Average speed = distance ÷ time.",
+        success: "Space route unlocked! 9,600 ÷ 3 = 3,200 km/h."
+      },
+      {
+        era: "future", eraLabel: "Grade 7 Bonus",
+        scene: "Powering an imagined future city",
+        title: "Solar Upgrade",
+        story: "Bonus lock 1 · Pay attention to percent versus percentage points.",
+        question: "A city gets 65% of its electricity from solar energy. That solar share increases by 15% of its previous share. What is the new solar percentage?",
+        unit: "%", answer: 74.75,
+        hint: "Find 15% of 65, then add it to 65. Do not simply add 15 percentage points.",
+        success: "Solar lock unlocked! 65 × 1.15 = 74.75%."
+      },
+      {
+        era: "future", eraLabel: "Grade 7 Bonus",
+        scene: "Scale a future city's public space",
+        title: "The Plaza Plan",
+        story: "Bonus lock 2 · First scale the lengths, then find the area.",
+        question: "On a plan, 1 cm represents 25 m. A real plaza is 100 m by 75 m. What is its area on the plan in cm²?",
+        unit: "cm²", answer: 12,
+        hint: "Convert each real length to centimetres on the plan before multiplying.",
+        success: "Plaza lock unlocked! 100 ÷ 25 = 4 cm; 75 ÷ 25 = 3 cm; area = 12 cm²."
+      }
+    ];
+
+    const $ = id => document.getElementById(id);
+    let index = 0;
+    let solved = 0;
+
+    function show(id, visible) { $(id).hidden = !visible; }
+
+    function setFeedback(message, kind = "") {
+      $("feedback").textContent = message;
+      $("feedback").className = "feedback " + kind;
+    }
+
+    function updateProgress() {
+      const mainLocks = Math.min(solved, 5);
+      const bonuses = Math.max(solved - 5, 0);
+      $("progressText").textContent =
+        `${mainLocks} / 5 locks open` +
+        (bonuses ? ` · ${bonuses} / 2 bonus` : "");
+      $("meterFill").style.width = `${mainLocks * 20}%`;
+      document.querySelector(".meter")
+        .setAttribute("aria-valuenow", mainLocks);
+    }
+
+    function updateStages(era, finished = false) {
+      const active = { heritage: 0, present: 1, future: 2 }[era];
+      document.querySelectorAll(".stations li").forEach((stage, i) => {
+        stage.classList.toggle("is-active", !finished && i === active);
+        stage.classList.toggle("is-done", finished || i < active);
+        if (!finished && i === active) {
+          stage.setAttribute("aria-current", "step");
+        } else {
+          stage.removeAttribute("aria-current");
+        }
+      });
+    }
+
+    function renderQuest(moveFocus = false) {
+      const q = quests[index];
+      document.body.dataset.era = q.era;
+      $("artUse").setAttribute("href", "#art-" + q.era);
+      $("artCaption").textContent = q.scene;
+      $("portal").classList.remove("unlocked");
+      $("eraTag").textContent = q.eraLabel;
+      $("lockTag").textContent = index < 5
+        ? `Lock ${index + 1} of 5`
+        : `Bonus ${index - 4} of 2`;
+      $("title").textContent = q.title;
+      $("story").textContent = q.story;
+      $("question").textContent = q.question;
+      $("unit").textContent = q.unit;
+      $("answer").value = "";
+      setFeedback("");
+      show("answerForm", true);
+      show("nextArea", false);
+      show("choiceArea", false);
+      show("finishArea", false);
+      updateStages(q.era);
+      updateProgress();
+      if (moveFocus) $("title").focus({ preventScroll: true });
+    }
+
+    function renderChoice() {
+      $("portal").classList.add("unlocked");
+      $("eraTag").textContent = "Future UAE";
+      $("lockTag").textContent = "Five locks open";
+      $("title").textContent = "The portal is open!";
+      $("story").textContent =
+        "You used math to travel from UAE heritage to an imagined future.";
+      $("question").textContent =
+        "Finish your mission now, or take on two optional Grade 7 challenges.";
+      $("artCaption").textContent = "Choose your next destination";
+      setFeedback("Excellent work—every main lock is unlocked.", "good");
+      show("answerForm", false);
+      show("nextArea", false);
+      show("choiceArea", true);
+      $("title").focus({ preventScroll: true });
+    }
+
+    function renderFinish() {
+      $("portal").classList.add("unlocked");
+      $("eraTag").textContent = "Mission complete";
+      $("lockTag").textContent = solved === 7 ? "Seven locks open" : "Five locks open";
+      $("title").textContent = "Future mathematician!";
+      $("story").textContent =
+        "You reached the future by using percentages, angles, scale, and speed.";
+      $("question").textContent =
+        "Which math skill would you use to help design the UAE of tomorrow? Write your idea on a reflection card beside the bulletin board.";
+      $("artCaption").textContent = "Your journey continues beyond the portal";
+      setFeedback(
+        solved === 7
+          ? "You completed all five main locks and both bonus locks!"
+          : "You completed all five main locks!",
+        "good"
+      );
+      show("answerForm", false);
+      show("nextArea", false);
+      show("choiceArea", false);
+      show("finishArea", true);
+      updateStages("future", true);
+      $("title").focus({ preventScroll: true });
+    }
+
+    $("answerForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const entry = $("answer").value.trim();
+      const q = quests[index];
+
+      if (!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(entry)) {
+        setFeedback("Enter a number only—for example, 1.5. Leave out units and commas.", "try");
+        return;
+      }
+
+      if (Math.abs(Number(entry) - q.answer) < 0.000001) {
+        solved++;
+        updateProgress();
+        $("portal").classList.add("unlocked");
+        setFeedback(q.success, "good");
+        show("answerForm", false);
+        show("nextArea", true);
+        $("nextBtn").textContent = index === 4
+          ? "Enter the time portal →"
+          : index === 6
+            ? "See my mission badge →"
+            : "Continue journey →";
+        $("nextBtn").focus();
+      } else {
+        setFeedback("Not yet. Hint: " + q.hint, "try");
+      }
+    });
+
+    $("nextBtn").addEventListener("click", () => {
+      if (index === 4) renderChoice();
+      else if (index === 6) renderFinish();
+      else { index++; renderQuest(true); }
+    });
+    $("bonusBtn").addEventListener("click", () => {
+      index = 5;
+      renderQuest(true);
+    });
+    $("skipBtn").addEventListener("click", renderFinish);
+    $("restartBtn").addEventListener("click", () => {
+      index = 0;
+      solved = 0;
+      renderQuest(true);
+    });
+
+    renderQuest();
+  </script>
+</body>
+</html>
